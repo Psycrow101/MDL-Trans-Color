@@ -108,7 +108,7 @@ function handleFileSelect(evt) {
 				img.data[j] = pixelPallate[i][pixelIndex[i][k]].r;
 				img.data[j + 1] = pixelPallate[i][pixelIndex[i][k]].g;
 				img.data[j + 2] = pixelPallate[i][pixelIndex[i][k]].b;
-				img.data[j + 3] = textureInfo[i].flags == 64 && pixelIndex[i][k] == 255 ? 0 : 255;
+				img.data[j + 3] = textureInfo[i].flags & (1<<6) && pixelIndex[i][k] == 255 ? 0 : 255;
 			}
 			
 			ctx.putImageData(img, 0, 0);
@@ -125,8 +125,12 @@ function handleFileSelect(evt) {
 				var curPixelIndex = y * textureInfo[id].width + x;
 				var curColorIndex = pixelIndex[id][curPixelIndex];
 				
-				if (curColorIndex == 255)
-					return;
+				if (curColorIndex == 255) {
+					if (textureInfo[id].flags & (1<<6))
+						return;
+
+					textureInfo[id].flags |= (1<<6);
+				}
 				
 				var ctx = this.getContext("2d");
 				var img = ctx.getImageData(0, 0, textureInfo[id].width, textureInfo[id].height);
@@ -147,7 +151,9 @@ function handleFileSelect(evt) {
 					dv.setUint8(pallateOffset + 255 * 3 + 1, pixelPallate[id][255].g);
 					dv.setUint8(pallateOffset + 255 * 3 + 2, pixelPallate[id][255].b);
 					
-					for (j = 0; j < textureInfo[id].width * textureInfo[id].height; j++) {
+					var imgSize = textureInfo[id].width * textureInfo[id].height;
+
+					for (j = 0; j < imgSize; j++) {
 						if (pixelIndex[id][j] == curColorIndex) {
 							pixelIndex[id][j] = 255;
 							dv.setUint8(textureInfo[id].index + j, 255);
@@ -165,7 +171,9 @@ function handleFileSelect(evt) {
 				} 
 				else
 				{
-					for (j = 0; j < textureInfo[id].width * textureInfo[id].height; j++) {
+					var imgSize = textureInfo[id].width * textureInfo[id].height;
+
+					for (j = 0; j < imgSize; j++) {
 						if (pixelIndex[id][j] == curColorIndex) {
 							dv.setUint8(textureInfo[id].index + j, 255);
 							img.data[j * 4 + 3] = 0;
@@ -173,7 +181,7 @@ function handleFileSelect(evt) {
 					}			
 				}							
 
-				dv.setUint32(flagOffset[id], 64, 1);
+				dv.setUint32(flagOffset[id], textureInfo[id].flags | (1<<6), 1);
 				ctx.putImageData(img, 0, 0);
 			}
 			
@@ -193,7 +201,9 @@ function handleFileSelect(evt) {
 				var ctx = this.getContext("2d");
 				var img = ctx.getImageData(0, 0, textureInfo[id].width, textureInfo[id].height);
 														
-				for (j = 0; j < textureInfo[id].width * textureInfo[id].height; j++) {
+				var imgSize = textureInfo[id].width * textureInfo[id].height;
+
+				for (j = 0; j < imgSize; j++) {
 					if (pixelIndex[id][j] == curColorIndex) {
 						dv.setUint8(textureInfo[id].index + j, curColorIndex);
 						img.data[j * 4] = pixelPallate[id][curColorIndex].r;
